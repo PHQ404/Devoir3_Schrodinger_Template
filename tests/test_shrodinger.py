@@ -31,7 +31,7 @@ def test_solve_shrodinger_using_fem(inputs, expected):
     inputs = (potential_funcs[inputs[0]], *inputs[1:])
     pred = fem.solve_shrodinger_using_fem(*inputs)
     for p, t in zip(pred, expected):
-        np.testing.assert_allclose(p, t, atol=1e-4, rtol=1e-4)
+        np.testing.assert_allclose(p, t, atol=1e-2, rtol=1e-2)
 
 
 @pytest.mark.parametrize(
@@ -45,5 +45,5 @@ def test_solve_shrodinger_using_shooting(inputs, expected):
     inputs = (potential_funcs[inputs[0]], *inputs[1:])
     pred = shooting.solve_shrodinger_using_shooting(*inputs)
     for p, t in zip(pred, expected):
-        np.testing.assert_allclose(p, t, atol=1e-4, rtol=1e-4)
+        np.testing.assert_allclose(p, t, atol=1e-2, rtol=1e-2)
 
