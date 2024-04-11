@@ -29,9 +29,21 @@ for function in ["solve_shrodinger_using_fem", "solve_shrodinger_using_shooting"
 )
 def test_solve_shrodinger_using_fem(inputs, expected):
     inputs = (potential_funcs[inputs[0]], *inputs[1:])
-    pred = fem.solve_shrodinger_using_fem(*inputs)
-    for p, t in zip(pred, expected):
-        np.testing.assert_allclose(p, t, atol=1e-2, rtol=1e-2)
+    eig_pred, eig_vect_pred = fem.solve_shrodinger_using_fem(*inputs)
+    eig_target, eig_vect_target = expected
+    eig_vect_pred, eig_vect_target = np.abs(eig_vect_pred)**2, np.abs(eig_vect_target)**2
+
+    np.testing.assert_allclose(
+        eig_pred, eig_target,
+        atol=1e-2, rtol=1e-2,
+        err_msg=f"Eigenvalues are not close enough. Expected: {eig_target}, got: {eig_pred}"
+    )
+
+    np.testing.assert_allclose(
+        eig_vect_pred, eig_vect_target,
+        atol=1e-2, rtol=1e-2,
+        err_msg=f"Eigenvectors are not close enough. Expected: {eig_vect_target}, got: {eig_vect_pred}"
+    )
 
 
 @pytest.mark.parametrize(
@@ -43,7 +55,19 @@ def test_solve_shrodinger_using_fem(inputs, expected):
 )
 def test_solve_shrodinger_using_shooting(inputs, expected):
     inputs = (potential_funcs[inputs[0]], *inputs[1:])
-    pred = shooting.solve_shrodinger_using_shooting(*inputs)
-    for p, t in zip(pred, expected):
-        np.testing.assert_allclose(p, t, atol=1e-2, rtol=1e-2)
+    eig_pred, eig_vect_pred = shooting.solve_shrodinger_using_shooting(*inputs)
+    eig_target, eig_vect_target = expected
+    eig_vect_pred, eig_vect_target = np.abs(eig_vect_pred)**2, np.abs(eig_vect_target)**2
+
+    np.testing.assert_allclose(
+        eig_pred, eig_target,
+        atol=1e-2, rtol=1e-2,
+        err_msg=f"Eigenvalues are not close enough. Expected: {eig_target}, got: {eig_pred}"
+    )
+
+    np.testing.assert_allclose(
+        eig_vect_pred, eig_vect_target,
+        atol=1e-2, rtol=1e-2,
+        err_msg=f"Eigenvectors are not close enough. Expected: {eig_vect_target}, got: {eig_vect_pred}"
+    )
 
