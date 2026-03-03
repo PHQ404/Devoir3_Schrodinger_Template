@@ -1,18 +1,22 @@
-from typing import Callable, List, Tuple
+"""
+Implementation of the main functions for the shooting method.
+
+This implementation is based on chapter 12 of the course notes
+by David Sénéchal.
+"""
+
+from collections.abc import Callable
 
 import numpy as np
-import scipy as sp
-from scipy.optimize import brentq
 
-from .constants import LEFT_BOUNDARY
-from .tools import time_it, normalise, scope_roots
+from src.tools import time_it
 
 
 def schrodinger(
-        state: np.ndarray,
-        x: np.ndarray,
-        potential: Callable[[np.ndarray], np.ndarray],
-        energy: float,
+    state: np.ndarray,
+    x: np.ndarray,
+    potential: Callable[[np.ndarray], np.ndarray],
+    energy: float,
 ) -> np.ndarray:
     r"""Calculates the Schrodinger equation for a given state.
 
@@ -40,7 +44,9 @@ def schrodinger(
     raise NotImplementedError("This function is not implemented yet.")
 
 
-def get_right_boundary(energy: float, domain: np.ndarray, potential: callable) -> float:
+def get_right_boundary(
+    energy: float, domain: np.ndarray, potential: Callable[[float], float]
+) -> float:
     """Evaluates the numerical solution at given energy on the right bound of
     the domain.
 
@@ -56,7 +62,12 @@ def get_right_boundary(energy: float, domain: np.ndarray, potential: callable) -
     raise NotImplementedError("This function is not implemented yet.")
 
 
-def solve_energies(energy0: float, domain: np.ndarray, potential: callable, sols_nb: int = 6) -> List[float]:
+def solve_energies(
+    energy0: float,
+    domain: np.ndarray,
+    potential: Callable[[float], float],
+    sols_nb: int = 6,
+) -> list[float]:
     """Uses an initial energy guess to find eigenenergies of the system using
     shooting method.
 
@@ -76,8 +87,8 @@ def solve_energies(energy0: float, domain: np.ndarray, potential: callable, sols
 
 @time_it
 def solve_shrodinger_using_shooting(
-        potential: callable, domain: np.ndarray, n_states: int
-) -> Tuple[np.ndarray, np.ndarray]:
+    potential: Callable[[float], float], domain: np.ndarray, n_states: int
+) -> tuple[np.ndarray, np.ndarray]:
     """Function that solves the time independant shrodinger equation
     for a given 1D potential and returns the first "n_states" eigenstates
     of the hamiltonian. It calculates the wavefunction at every x=points using
@@ -91,7 +102,6 @@ def solve_shrodinger_using_shooting(
     :type n_states: int
     :return: The first "n_states" energies of the eigenstates and the first "n_states" eigenstates
         calculated at every grid points of shape (n_states, N).
-    :rtype: Tuple[np.ndarray, np.ndarray]
+    :rtype: tuple[np.ndarray, np.ndarray]
     """
     raise NotImplementedError("This function is not implemented yet.")
-

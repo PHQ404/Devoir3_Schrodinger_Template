@@ -1,13 +1,15 @@
-import time
-from typing import Tuple
+"""Collections of helper tools for solving the Schrödinger equation."""
 
-import numpy as np
+import time
+from collections.abc import Callable
 from functools import wraps
 
+import numpy as np
 
-def time_it(func):
-    """Wrapper that prints the processing time of a given function.
-    """
+
+def time_it(func: Callable) -> Callable:
+    """Wrapper that prints the processing time of a given function."""
+
     @wraps(func)
     def time_it_wrapper(*args, **kwargs):
         start_time = time.perf_counter()
@@ -21,49 +23,42 @@ def time_it(func):
     return time_it_wrapper
 
 
-def lin_extrapolate(xs, ys, xf):
-    """ Function that makes a linear extrapolation of a point,
-    given 2 reference points
+def lin_extrapolate(xs: np.ndarray, ys: np.ndarray, xf: float) -> float:
+    """Linearly extrapolates a point given 2 reference points.
 
-    Parameters
-    ----------
-    xs: np.ndarray, shape=(2), the x position of the 2 reference points
-    ys: np.ndarray, shape=(2), the y position of the 2 reference points
-    xf: float, the y position of the point we wish to extrapolate
-
-    Returns
-    -------
-    yf: float, the y value of the extrapolated point
+    :param xs: The x positions of the 2 reference points.
+    :type xs: np.ndarray
+    :param ys: The y positions of the 2 reference points.
+    :type ys: np.ndarray
+    :param xf: The x position of the point to extrapolate.
+    :type xf: float
+    :return: The extrapolated y value.
+    :rtype: float
     """
-    a = (ys[0]-ys[1])/(xs[0]-xs[1])
-    return ys[0] + a*(xf-xs[0])
+    a = (ys[0] - ys[1]) / (xs[0] - xs[1])
+    return ys[0] + a * (xf - xs[0])
 
 
-def normalise(state, xs):
-    """ Function that normalises a state vector assuming the vector is Real
+def normalise(state: np.ndarray, xs: np.ndarray) -> np.ndarray:
+    """Normalises a state vector assuming the vector is real.
 
-    Parameters
-    ----------
-    state: np.ndarray, shape=(N), the state vector to normalise
-    xs: np.ndarray, shape=(N), the x position of the 2 reference points
-
-    Returns
-    -------
-    state_f: np.ndarray, shape=(N), normalised state
+    :param state: The state vector to normalise.
+    :type state: np.ndarray
+    :param xs: The x positions of the grid points of shape (N).
+    :type xs: np.ndarray
+    :return: The normalised state vector.
+    :rtype: np.ndarray
     """
     dxs = xs[1:] - xs[:-1]
     temp = state * state
-    area = 1/2 * (temp[:-1] + temp[1:])*dxs
+    area = 1 / 2 * (temp[:-1] + temp[1:]) * dxs
     area = area.sum()
-    return state/np.sqrt(area)
+    return state / np.sqrt(area)
 
 
 def scope_roots(
-        func: callable,
-        x0: float,
-        args: tuple = (),
-        max_iters: int = 500
-) -> Tuple[float, bool]:
+    func: Callable, x0: float, args: tuple = (), max_iters: int = 500
+) -> tuple[float, bool]:
     """Scope roots around point x=x0 using iterations of delta=1e-3.
 
     :param func: The function to scope roots for.

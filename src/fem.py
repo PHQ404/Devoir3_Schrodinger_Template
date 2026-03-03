@@ -1,16 +1,18 @@
 """
-Implémentation des principales functions pour la méthode des éléments finis
-en une dimension.
+Implementation of the main functions for the finite element method
+in one dimension.
 
-Cette implémentation se base sur le chapitre 12 des notes de cours
-de David Sénéchal.
+This implementation is based on chapter 12 of the course notes
+by David Sénéchal.
 """
-from typing import Tuple
+
+from collections.abc import Callable
 
 import numpy as np
-import scipy.sparse as sp
 import scipy.integrate as integrate
-from . import tools
+import scipy.sparse as sp
+
+from src import tools
 
 
 class Grid:
@@ -20,119 +22,116 @@ class Grid:
     :type points: numpy.ndarray
     """
 
-    def __init__(self, points):
-        # On s'assure que les points sont ordonnées.
+    def __init__(self, points: np.ndarray):
+        # Ensure that the points are sorted.
         if np.any((points[1:] - points[:-1]) < 0.0):
             raise ValueError("Points must be sorted.")
         self.points = points
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Number of points in the grid."""
         return len(self.points)
 
-    def matrice_masse_interne(self):
-        """Retourne la matrice de masse de la grille
-        sous forme de scipy.sparse.csc_matrix.
+    def inner_mass_matrix(self) -> sp.csc_array:
+        """Returns the mass matrix of the grid
+        as a scipy.sparse.csc_matrix.
 
-        Les éléments aux frontières ne sont pas calculés.
-        Ainsi, l'élément (0, 0) de la matrice retournée
-        représente la valeur (1, 1) de la matrice complète.
+        The boundary elements are not computed.
+        Thus, element (0, 0) of the returned matrix
+        represents the value (1, 1) of the full matrix.
         """
         n = len(self)
-        matrice = sp.dok_matrix((n - 2, n - 2))
-        # On calcule les valeurs sur la diagonale centrale.
+        matrix = sp.dok_matrix((n - 2, n - 2))
+        # Compute values on the main diagonal.
         for site in range(1, n - 1):
-            matrice[site - 1, site - 1] = (
+            matrix[site - 1, site - 1] = (
                 self.points[site + 1] - self.points[site - 1]
             ) / 3.0
-        # On calcule les valeurs sur les autres diagonales.
+        # Compute values on the off-diagonals.
         for site in range(1, n - 2):
-            valeur = (self.points[site + 1] - self.points[site]) / 6.0
-            matrice[site - 1, site] = valeur
-            matrice[site, site - 1] = valeur
-        return matrice.tocsc()
+            value = (self.points[site + 1] - self.points[site]) / 6.0
+            matrix[site - 1, site] = value
+            matrix[site, site - 1] = value
+        return matrix.tocsc()
 
-    def matrice_laplacienne_interne(self):
-        """Retourne la matrice de l'opérateur différentiel (D^2) de la grille
-        sous forme de scipy.sparse.csc_matrix.
+    def inner_laplacian_matrix(self) -> sp.csc_array:
+        """Returns the matrix of the differential operator (D^2) of the grid
+        as a scipy.sparse.csc_matrix.
 
-        Les éléments aux frontières ne sont pas calculés.
-        Ainsi, l'élément (0, 0) de la matrice retournée
-        représente la valeur (1, 1) de la matrice complète.
+        The boundary elements are not computed.
+        Thus, element (0, 0) of the returned matrix
+        represents the value (1, 1) of the full matrix.
         """
         n = len(self)
-        matrice = sp.dok_matrix((n - 2, n - 2))
-        # On calcule les valeurs sur la diagonale centrale.
+        matrix = sp.dok_matrix((n - 2, n - 2))
+        # Compute values on the main diagonal.
         for site in range(1, n - 1):
-            matrice[site - 1, site - 1] = sum(
-                1.0 / (self.points[i] - self.points[i + 1])
-                for i in [site - 1, site]
+            matrix[site - 1, site - 1] = sum(
+                1.0 / (self.points[i] - self.points[i + 1]) for i in [site - 1, site]
             )
-        # On calcule les valeurs sur les autres diagonales.
+        # Compute values on the off-diagonals.
         for site in range(1, n - 2):
-            valeur = 1.0 / (self.points[site + 1] - self.points[site])
-            matrice[site - 1, site] = valeur
-            matrice[site, site - 1] = valeur
-        return matrice.tocsc()
+            value = 1.0 / (self.points[site + 1] - self.points[site])
+            matrix[site - 1, site] = value
+            matrix[site, site - 1] = value
+        return matrix.tocsc()
 
-    def matrice_potentiel(self, potentiel):
-        """Retourne la matrice de potentiel de la grille
-        sous forme de scipy.sparse.csc_matrix.
+    def potential_matrix(self, potential: Callable[[float], float]) -> sp.csr_array:
+        """Returns the potential matrix of the grid
+        as a scipy.sparse.csc_matrix.
 
-        Les éléments aux frontières ne sont pas calculés.
-        Ainsi, l'élément (0, 0) de la matrice retournée
-        représente la valeur (1, 1) de la matrice complète.
+        The boundary elements are not computed.
+        Thus, element (0, 0) of the returned matrix
+        represents the value (1, 1) of the full matrix.
 
-        :param potentiel: Une fonction de float vers float représentant le potentiel à calculer.
+        :param potential: A function from float to float representing the potential to compute.
+        :type potential: Callable[[float], float]
         """
-        # Calcule les ratios pour les intégrales.
-        def pente_pos(x, site):
+
+        # Compute the ratios for the integrals.
+        def slope_pos(x, site):
             num = x - self.points[site - 1]
             denom = self.points[site] - self.points[site - 1]
             return num / denom
 
-        def pente_neg(x, site):
+        def slope_neg(x, site):
             num = self.points[site + 1] - x
             denom = self.points[site + 1] - self.points[site]
             return num / denom
 
         n = len(self)
-        matrice = sp.dok_matrix((n - 2, n - 2))
+        matrix = sp.dok_matrix((n - 2, n - 2))
 
-        # On calcule les valeurs sur la diagonale centrale.
+        # Compute values on the main diagonal.
         for site in range(1, n - 1):
-            valeur_pos = integrate.quad(
-                lambda x: potentiel(x) * pente_pos(x, site)**2,
+            value_pos = integrate.quad(
+                lambda x: potential(x) * slope_pos(x, site) ** 2,
                 self.points[site - 1],
-                self.points[site]
-            )[0]
-            valeur_neg = integrate.quad(
-                lambda x: potentiel(x) * pente_neg(x, site)**2,
                 self.points[site],
-                self.points[site + 1]
             )[0]
-            matrice[site - 1, site - 1] = valeur_pos + valeur_neg
+            value_neg = integrate.quad(
+                lambda x: potential(x) * slope_neg(x, site) ** 2,
+                self.points[site],
+                self.points[site + 1],
+            )[0]
+            matrix[site - 1, site - 1] = value_pos + value_neg
 
-        # On calcule les valeurs sur les autres diagonales.
+        # Compute values on the off-diagonals.
         for site in range(1, n - 2):
-            valeur = integrate.quad(
-                lambda x: (
-                    potentiel(x)
-                    * pente_pos(x, site + 1)
-                    * pente_neg(x, site)
-                ),
+            value = integrate.quad(
+                lambda x: potential(x) * slope_pos(x, site + 1) * slope_neg(x, site),
                 self.points[site],
-                self.points[site + 1]
+                self.points[site + 1],
             )[0]
-            matrice[site - 1, site] = valeur
-            matrice[site, site - 1] = valeur
-        return matrice.tocsr()
+            matrix[site - 1, site] = value
+            matrix[site, site - 1] = value
+        return matrix.tocsr()
 
 
 @tools.time_it
 def solve_shrodinger_using_fem(
-        potential: callable, points: np.ndarray, n_states: int
-) -> Tuple[np.ndarray, np.ndarray]:
+    potential: Callable[[float], float], points: np.ndarray, n_states: int
+) -> tuple[np.ndarray, np.ndarray]:
     """Function that solves the time independant shrodinger equation
     for a given 1D potential and returns the first "n_states" eigenstates
     of the hamiltonian. It calculates the wavefunction at every x=points
@@ -148,4 +147,4 @@ def solve_shrodinger_using_fem(
         calculated at every grid points of shape (n_states, N).
     :rtype: Tuple[np.ndarray, np.ndarray]
     """
-    raise NotImplementedError('You need to implement this function.')
+    raise NotImplementedError("You need to implement this function.")
