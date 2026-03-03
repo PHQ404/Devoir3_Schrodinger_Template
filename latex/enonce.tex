@@ -1,0 +1,152 @@
+\documentclass[12pt, letterpaper]{article}
+
+\usepackage{amsmath, amssymb}
+\usepackage{physics}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tcolorbox}
+
+\begin{document}
+
+\title{Devoir 3 : Équation de Schrödinger en dimension 1}
+\author{PHQ404}
+\date{Date de remise : -}
+\maketitle
+
+\section{Objectif}\label{sec:objectif}
+
+\noindent L’objectif de ce travail est de se familiariser avec deux techniques de résolution
+de problèmes aux limites en dimension 1 : la méthode du tir et la méthode des éléments finis.
+Ces méthodes sont présentées au chapitre 12 des notes de David Sénéchal.
+
+\section{Définition du problème}\label{sec:definition-probleme}
+
+\noindent L’équation de Schrödinger indépendante du temps est considérée pour une particule de masse unitaire dans
+un potentiel quadratique :
+\begin{equation}
+	\label{eq:schrodinger}
+	- \frac{1}{2} \ddot{\psi} + \frac{1}{2} x^2 \psi = E \psi.
+\end{equation}
+Les solutions analytiques sont connues et les énergies propres exactes sont
+\begin{equation}
+	E_n = n + \tfrac{1}{2}, \qquad n = 0,1,2,\dots
+\end{equation}
+Ces valeurs serviront à valider vos résultats numériques.
+
+\section{Méthode du tir}\label{sec:methode-du-tir}
+
+\noindent L'équation de Schrödinger doit être résolue numériquement avec la méthode du tir.
+On cherche les solutions pour $x \in [-L,L]$ avec $L = 5$, en utilisant $N=200$ points uniformément espacés.
+Les conditions initiales utilisées pour l'intégration sont
+\begin{equation}
+	\psi(-L) = 0, \qquad \dot{\psi}(-L) = 0{,}001.
+\end{equation}
+La valeur initiale de $\dot{\psi}$ n’est pas critique et n'influence pas les énergies propres,
+mais celle-ci devrait vous donner une échelle raisonnable. \\
+
+\noindent Les énergies propres sont définies comme les valeurs de $E$ telles que la solution intégrée satisfait la condition de Dirichlet $\psi(L \mid E) = 0$.
+On définit donc la fonction
+\begin{equation}
+	f(E) = \psi(L \mid E),
+\end{equation}
+et les énergies propres correspondent aux racines de $f(E)$. \\
+
+\noindent Vous devez :
+
+\begin{itemize}
+	\item Implémenter une fonction qui, pour une valeur donnée de $E$, intègre l'équation et retourne $f(E) = \psi(x=L \mid E)$.
+
+	\item Implémenter une procédure de cadrage de racine:
+	      étant donnée une valeur initiale $E_0$, trouver $E_1$ tel que
+	      \begin{equation}
+		      f(E_0)\,f(E_1) < 0.
+	      \end{equation}
+	      Pour ce faire, augmenter $E$ par pas de $\Delta E$ jusqu’à détecter un changement de signe,
+	      ou atteindre un nombre maximal d’itérations (20 par exemple).
+
+	\item Utiliser ensuite l'algorithme de Brent pour trouver la racine dans l'intervalle ainsi obtenue.
+	      L’implémentation de \texttt{SciPy} peut être utilisée pour l’algorithme de Brent.
+
+	\item Déterminer numériquement les six plus basses énergies propres.
+
+	\item Représenter sur un même graphique les six fonctions d’onde correspondantes,
+	      chacune étant décalée verticalement par la valeur de son énergie.
+\end{itemize}
+
+\begin{figure}[h!!]
+	\centering
+	\includegraphics[scale=0.5]{../images/exemple}
+	\caption{Exemple de figure pour les états propres de basses énergies
+		de l’équation~\ref{eq:schrodinger}.}
+	\label{fig:exemple}
+\end{figure}
+
+\section{Méthode des éléments finis}\label{sec:methode-des-elements-finis}
+
+\noindent Dans cette partie, la méthode des éléments finis doit être utilisée pour la résolution de l'équation de Schrödinger.
+Un fichier Python vous est fourni et contient une classe implémentant les éléments nécessaires. \\
+
+\noindent Vous devez :
+
+\begin{itemize}
+	\item Utiliser cette classe pour résoudre numériquement l’équation~\ref{eq:schrodinger}.
+	\item Utiliser une grille de $N=500$ points.
+	\item Prendre $L=6$.
+	\item Produire le même type de graphique que dans la partie précédente.
+\end{itemize}
+
+\noindent Les fonctions fournies ne calculent pas les valeurs aux frontières.
+Celles-ci ne sont pas nécessaires et peuvent ajouter du bruit numérique aux solutions.
+
+\begin{tcolorbox}
+	Toutes les fonctions qui doivent être implémentées sont déjà définies dans les fichiers
+	et retournent une exception \texttt{NotImplementedError}.
+\end{tcolorbox}
+
+\section{Comparaison et vérification}\label{sec:verification}
+
+Comment est-ce que les deux méthodes se comparent?
+Comment peut-on bien voir les différences et analyser le taux d'erreur entre celles-ci?
+Quelle méthode converge le plus rapidement?
+Quelle sont les compromis en termes de complexité algorithmique?
+Comment est-ce que ces méthodes se comparent à la solution analytique?
+La fonction \texttt{scipy.special.eval\_hermite} pourrait vous être utile.
+\begin{tcolorbox}[]
+	Des exemples de vérification sont fournis, mais il vous appartient d’ajouter un nombre suffisant de tests unitaires pertinents ainsi que des tests de validation scientifique afin d’obtenir l’ensemble des points.
+\end{tcolorbox}
+
+\section{Barème d'évaluation}\label{sec:bareme-evaluation}
+
+\begin{tabular}{l l c}
+	\toprule
+	\textbf{Catégorie} & \textbf{Critère d’évaluation}              & \textbf{Pondération} \\
+	\midrule
+	\multirow{6}{*}{Code (60\%)}
+	                   & Qualité du code (pylint)                   & 10\%                 \\
+	                   & Couverture de tests (codecov)              & 10\%                 \\
+	                   & Tests publics (pytest)                     & 10\%                 \\
+	                   & Tests cachés (pytest)                      & 20\%                 \\
+	                   & Documentation, docstrings et typage        & 5\%                  \\
+	                   & README, reproductibilité et historique Git & 5\%                  \\
+	\midrule
+	\multirow{9}{*}{Rapport (40\%)}
+	                   & Résumé                                     & 3\%                  \\
+	                   & Introduction                               & 3\%                  \\
+	                   & Théorie                                    & 6\%                  \\
+	                   & Résultats                                  & 6\%                  \\
+	                   & Discussion                                 & 6\%                  \\
+	                   & Conclusion                                 & 3\%                  \\
+	                   & Références                                 & 3\%                  \\
+	                   & Vérification des résults                   & 5\%                  \\
+	                   & Présentation                               & 5\%                  \\
+	\bottomrule
+\end{tabular}
+
+
+\end{document}
